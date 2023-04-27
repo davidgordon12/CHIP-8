@@ -1,4 +1,5 @@
-#![allow(dead_code)] // allowed for now
+#![allow(dead_code)]        // allowed for now
+#![allow(unused_mut)]       // allowed for now
 #![allow(unused_variables)] // allowed for now 
 const SCREEN_WIDTH: usize     =  64;
 const SCREEN_HEIGHT: usize    =  32;
@@ -41,22 +42,23 @@ impl Emulator {
     }
 
     fn push(&mut self, value: u16) {
+        if self.sp >= 16 { panic("Cannot push onto stack, pointer at 16") }
         self.stack[self.sp as usize] = value;
         self.sp += 1;
     }
 
     fn pop(&mut self) -> u16 {
+        if self.sp <= 0 { panic("Cannot pop stack, pointer at 0.") }
         self.sp -= 1;
         self.stack[self.sp as usize]
     }
 }
 
+fn panic(info: &str) -> ! {
+    println!("Panic: {}", info);
+    loop{}
+}
+
 fn main() {
     let mut emulator = Emulator::new();
-
-    emulator.push(30);
-
-    let x = emulator.pop();
-
-    println!("{}", x)
 }
