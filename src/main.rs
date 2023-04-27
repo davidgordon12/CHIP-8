@@ -25,8 +25,8 @@ pub struct Emulator {
 }
 
 impl Emulator {
-    pub fn new() -> Self {
-        return Self {
+    fn new() -> Self {
+        Self {
             pc: PROGRAM_START_ADDR,
             ram: [0; RAM_SIZE],
             stack: [0; STACK_SIZE],
@@ -37,10 +37,26 @@ impl Emulator {
             sp: 0,
             dt: 0,
             st: 0,
-        };
+        }
+    }
+
+    fn push(&mut self, value: u16) {
+        self.stack[self.sp as usize] = value;
+        self.sp += 1;
+    }
+
+    fn pop(&mut self) -> u16 {
+        self.sp -= 1;
+        self.stack[self.sp as usize]
     }
 }
 
 fn main() {
-    let emulator = Emulator::new();
+    let mut emulator = Emulator::new();
+
+    emulator.push(30);
+
+    let x = emulator.pop();
+
+    println!("{}", x)
 }
