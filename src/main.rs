@@ -89,7 +89,9 @@ impl Emulator {
     }
 
     fn decode(&mut self, op: u16) -> &str {
-        "CLS"
+        match(op) { 
+            _ => self.panic("Unimplemented opcode received."),
+        }
     }
 
     fn execute(&mut self, opcode: String) -> u8 {
@@ -120,23 +122,23 @@ impl Emulator {
     }
 
     fn push(&mut self, value: u16) {
-        if self.sp >= 16 { panic("Cannot push onto stack, pointer at 16") }
+        if self.sp >= 16 { self.panic("Cannot push onto stack, pointer at 16.") }
 
         self.stack[self.sp as usize] = value;
         self.sp += 1;
     }
 
     fn pop(&mut self) -> u16 {
-        if self.sp <= 0 { panic("Cannot pop stack, pointer at 0.") }
+        if self.sp <= 0 { self.panic("Cannot pop stack, pointer at 0.") }
 
         self.sp -= 1;
         self.stack[self.sp as usize]
     }
-}
 
-fn panic(info: &str) -> ! {
-    println!("Panic: {}", info);
-    loop {}
+    fn panic(&self, info: &str) -> ! {
+        println!("Panic: {}", info);
+        loop {}
+    }
 }
 
 fn main() {
