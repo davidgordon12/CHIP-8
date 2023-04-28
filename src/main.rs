@@ -82,25 +82,30 @@ impl Emulator {
         let hi_byte = self.ram[self.pc as usize] as u16;
         let lo_byte = self.ram[(self.pc + 1) as usize] as u16;
 
-        let op = (hi_byte << 8) | lo_byte;
+        let opcode = (hi_byte << 8) | lo_byte;
         self.pc += 2;
 
-        op
+        opcode
     }
 
     fn decode(&mut self, op: u16) -> &str {
         "CLS"
     }
 
-    fn execute(&mut self, op: u16) {
+    fn execute(&mut self, opcode: String) -> u8 {
        /* DECODE AND EXECUTE IN ONE FUNCTION TEMPORARILY */ 
+        0
     }
 
     fn cycle(&mut self) {
         // Fetch -> Decode -> Execute
-        let op = self.fetch();
-
+        let opcode = self.fetch();
         
+        // Drop the reference by copying result to op
+        let op = self.decode(opcode).to_string();
+
+        // Now we can reference *self again
+        self.execute(op); 
     }
 
     fn increment_timers(&mut self) {
@@ -137,4 +142,6 @@ fn panic(info: &str) -> ! {
 fn main() {
     let mut emulator = Emulator::new();
     emulator.reset();
+
+    emulator.pop();
 }
