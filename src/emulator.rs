@@ -36,7 +36,7 @@ pub struct Emulator {
     sp: u16,
     ram: [u8; RAM_SIZE],
     v: [u8; NUM_V_REG],
-    screen: [bool; SCREEN_WIDTH * SCREEN_HEIGHT],
+    pub screen: [bool; SCREEN_WIDTH * SCREEN_HEIGHT],
     index: u16,
     stack: [u16; STACK_SIZE],
     keys: [bool; NUM_KEYS],
@@ -76,6 +76,17 @@ impl Emulator {
         self.st = 0;
         self.keys = [false; NUM_KEYS];
         self.ram[0..FONTSET_SIZE].copy_from_slice(&FONTSET);
+    }
+
+    pub fn cycle(&mut self) {
+        // Fetch -> Decode -> Execute
+        let op = self.fetch();
+        
+        // Drop the reference by copying result to opcode
+        let opcode = self.decode(op).to_string();
+
+        // Now we can reference *self again, pass opcode as a slice
+        self.execute(&opcode[..], op); 
     }
 
     pub fn fetch(&mut self) -> u16 {
@@ -141,30 +152,101 @@ impl Emulator {
 
             // CLS
             "00E0" =>  { 
-                self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT]; 
+                self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
             }
 
             // RET
             "00EE" => {
-                let addr = self.pop();
-                self.pc = addr;
+                self.pc = self.pop();
             }
 
             // JMP
+            "1nnn" => {
+                self.pc = op & 0xFFF;
+            }
+
+            // CALL
+            "2nnn" => {
+                self.push(self.pc);
+                self.pc = op & 0xFFF;
+            }
+
+            // SKIP next if VX == NN
+            "3xnn" => {
+                let x = ((op & 0x0F00) >> 8) as usize; 
+
+                if self.v[x] == (op & 0xFF) as u8 {
+                    self.pc += 2;
+                }
+            }
+
+            "4xnn" => {
+                let x = ((op & 0x0F00) >> 8) as usize; 
+
+                if self.v[x] != (op & 0xFF) as u8 {
+                    self.pc += 2;
+                }
+            }
+
+            "5xy0" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let y = ((op & 0x00F0) >> 4) as usize;
+
+                if self.v[x] == self.v[y] {
+                    self.pc += 2;
+                }
+            }
+
+            "6xnn" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let val = (op & 0xFF) as u8;
+
+                self.v[x] = self.v[x].wrapping_add(val);
+            }
+
+            "7xnn" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let val = (op & 0xFF) as u8;
+
+                self.v[x] += val;
+            }
+
+            "8xy0" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let y = ((op & 0x00F0) >> 4) as usize;
+
+                self.v[x] = self.v[y];
+            }
+
+            "8xy1" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let y = ((op & 0x00F0) >> 4) as usize;
+
+                self.v[x] |= self.v[y];
+            }
+
+            "8xy2" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let y = ((op & 0x00F0) >> 4) as usize;
+
+                self.v[x] &= self.v[y];
+            }
+
+            "8xy3" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let y = ((op & 0x00F0) >> 4) as usize;
+
+                self.v[x] ^= self.v[y];
+            }
+
+            "8xy4" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let y = ((op & 0x00F0) >> 4) as usize;
+
+            }
 
             _ => self.panic("Unimplemented")
         }
-    }
-
-    pub fn cycle(&mut self) {
-        // Fetch -> Decode -> Execute
-        let op = self.fetch();
-        
-        // Drop the reference by copying result to opcode
-        let opcode = self.decode(op).to_string();
-
-        // Now we can reference *self again, pass opcode as a slice
-        self.execute(&opcode[..], op); 
     }
 
     pub fn increment_timers(&mut self) {
@@ -196,4 +278,8 @@ impl Emulator {
         println!("Panic: {}", info);
         loop {}
     }
+}
+
+pub fn cls(mut emulator: Emulator) {
+    emulator.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
 }
