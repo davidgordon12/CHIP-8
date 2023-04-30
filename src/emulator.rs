@@ -242,7 +242,53 @@ impl Emulator {
             "8xy4" => {
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let y = ((op & 0x00F0) >> 4) as usize;
+                
+                let (sum, overflow) = self.v[x].overflowing_add(self.v[y]);
 
+                self.v[x] = sum;
+                self.v[0xF] = overflow as u8;
+            }
+
+            "8xy5" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let y = ((op & 0x00F0) >> 4) as usize;
+                
+                let (sum, underflow) = self.v[x].overflowing_sub(self.v[y]);
+
+                let underflow = if underflow { 0 } else { 1 };
+
+                self.v[x] = sum;
+                self.v[0xF] = underflow;
+            }
+
+            "8xy6" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                let dropoff = self.v[x] & 1;
+
+                self.v[x] >>= 1;
+                self.v[0xF] = dropoff;
+            }
+
+            "8xy7" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let y = ((op & 0x00F0) >> 4) as usize;
+                
+                let (sum, underflow) = self.v[y].overflowing_sub(self.v[x]);
+
+                let underflow = if underflow { 0 } else { 1 };
+
+                self.v[x] = sum;
+                self.v[0xF] = underflow;
+            }
+
+            "8xy8" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                let dropoff = (self.v[x] >> 7) & 1;
+
+                self.v[x] <<= 1;
+                self.v[0xF] = dropoff;
             }
 
             _ => self.panic("Unimplemented")
@@ -278,8 +324,4 @@ impl Emulator {
         println!("Panic: {}", info);
         loop {}
     }
-}
-
-pub fn cls(mut emulator: Emulator) {
-    emulator.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
 }
