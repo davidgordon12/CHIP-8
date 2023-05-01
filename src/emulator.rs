@@ -36,12 +36,13 @@ pub struct Emulator {
     sp: u16,
     ram: [u8; RAM_SIZE],
     v: [u8; NUM_V_REG],
-    pub screen: [bool; SCREEN_WIDTH * SCREEN_HEIGHT],
+    screen: [bool; SCREEN_WIDTH * SCREEN_HEIGHT],
     index: u16,
     stack: [u16; STACK_SIZE],
     keys: [bool; NUM_KEYS],
     dt: u8,
     st: u8,
+    last_op: String,
 }
 
 impl Emulator {
@@ -57,6 +58,7 @@ impl Emulator {
             sp: 0,
             dt: 0,
             st: 0,
+            last_op: String::from(""),
         };
 
         emu.ram[0..FONTSET_SIZE].copy_from_slice(&FONTSET);
@@ -291,9 +293,124 @@ impl Emulator {
                 self.v[0xF] = dropoff;
             }
 
+            "9xy0" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+                let y = ((op & 0x00F0) >> 4) as usize;
 
+                if self.v[x] != self.v[y] {
+                    self.pc += 2;
+                }
+            }        
 
-            _ => self.panic("Unimplemented")
+            "Annn" => {
+                self.index = op & 0x0FFF;
+            }
+
+            "Bnnn" => {
+                self.pc = (op & 0x0FFF) + self.v[0] as u16;
+            }
+
+            "Cxnn" => {
+                let x = (op & 0x0F00) as usize;
+                let nn = (op & 0xFF) as u8;
+
+                use rand::random;
+
+                let rng: u8 = random();
+                self.v[x] = rng & nn;
+            }
+
+            "Dxyn" => {
+                let x_idx = ((op & 0x0F00) >> 8) as usize;
+                let y_idx = ((op & 0x00F0) >> 4) as usize;
+                let n = op & 0xF;
+
+                // Draw coordinates are stored in register X and Y
+                let x_cord = self.v[x_idx] as u16;
+                let y_cord = self.v[y_idx] as u16;
+
+                // Keep track of whether or not we overwrote a pixel when we drew
+                let mut erased = false;
+
+                for row in 0..n {
+                    // Find where our sprite data is stored
+                    let addr = self.index + row as u16;
+                    let pixels = self.ram[addr as usize];
+
+                    for column in 0..8 {
+                        // Use a mask to fetch current pixel's bit. Only flip if a 1
+                        if (pixels & (0b1000_0000 >> row)) != 0 {
+                            // Sprites should wrap around screen, so use modulo
+                            let x = (x_cord + column) as usize % SCREEN_WIDTH;
+                            let y = (y_cord + row) as usize % SCREEN_HEIGHT;
+
+                            // Get pixel index for our screen array
+                            let idx = x + SCREEN_WIDTH * y;
+
+                            // Check if we are going to erase a pixel
+                            erased |= self.screen[idx];
+
+                            self.screen[idx] ^= true;
+                        }
+                    }
+                }
+
+                // Populate Vf
+                if erased {
+                    self.v[0xF] = 1
+                } else {
+                    self.v[0xF] = 0;
+                }
+            }
+
+            "Ex9E" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                let vx = self.v[x];
+                let key = self.keys[vx as usize];
+
+                if key {
+                    self.pc += 2;
+                }
+            }
+
+            "ExA1" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                let vx = self.v[x];
+                let key = self.keys[vx as usize];
+
+                if !key {
+                    self.pc += 2;
+                }
+            }
+
+            "Fx07" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                self.v[x] = self.dt;
+            }
+
+            "Fx0A" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                let mut pressed = false;
+
+                for i in 0..self.keys.len() {
+                    // Keys is an array of bools, so we are checking if keys[i] is true
+                    if self.keys[i] {
+                        self.v[x] = i as u8;
+                        pressed = true;
+                        break;
+                    }
+                }
+
+                if !pressed {
+                     self.pc -= 2;
+                }
+            }
+
+            _ => { self.panic("Unimplemented"); }
         }
     }
 
@@ -324,6 +441,7 @@ impl Emulator {
 
     pub fn panic(&self, info: &str) -> ! {
         println!("Panic: {}", info);
+        println!("Last opcode: {}", self.last_op);
         loop {}
     }
 }
