@@ -1,16 +1,12 @@
-#![allow(dead_code)]        // allowed for now
-#![allow(unused_mut)]       // allowed for now
-#![allow(unused_variables)] // allowed for now 
-const SCREEN_WIDTH: usize     =  64;
-const SCREEN_HEIGHT: usize    =  32;
+pub const SCREEN_WIDTH: usize     =  64;
+pub const SCREEN_HEIGHT: usize    =  32;
 const NUM_V_REG: usize        =  16;
 const NUM_KEYS: usize         =  16;
 const RAM_SIZE: usize         =  4096;
 const STACK_SIZE: usize       =  16;
 const FONTSET_SIZE: usize     =  80;
-const MAX_PROGRAM_MEMORY: u16 =  3584;
-const PROGRAM_START_ADDR: u16 =  0x200;
-const PROGRAM_END_ADDR: u16   =  0xFFF;
+const MAX_PROGRAM_MEMORY: usize =  3584;
+const PROGRAM_START_ADDR: usize =  0x200;
 
 const FONTSET: [u8; FONTSET_SIZE] = [
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0 
@@ -48,7 +44,7 @@ pub struct Emulator {
 impl Emulator {
     pub fn new() -> Self {
        let mut emu = Self {
-            pc: PROGRAM_START_ADDR,
+            pc: PROGRAM_START_ADDR as u16,
             ram: [0; RAM_SIZE],
             stack: [0; STACK_SIZE],
             v: [0; NUM_V_REG],
@@ -67,7 +63,7 @@ impl Emulator {
     }
 
     pub fn reset(&mut self) {
-        self.pc = PROGRAM_START_ADDR;
+        self.pc = PROGRAM_START_ADDR as u16;
         self.ram = [0; RAM_SIZE];
         self.stack = [0; STACK_SIZE];
         self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
@@ -492,6 +488,24 @@ impl Emulator {
 
         self.sp -= 1;
         self.stack[self.sp as usize]
+    }
+
+    pub fn get_screen(&self) -> &[bool] {
+        &self.screen
+    }
+
+    pub fn key_press(&mut self, index: usize, pressed: bool) {
+        self.keys[index] = pressed;
+    }
+
+    pub fn load_rom(&mut self, rom: &[u8]) {
+        if rom.len() > MAX_PROGRAM_MEMORY {
+            self.panic("ROM file too large");
+        }
+
+        let program_end_addr = PROGRAM_START_ADDR + rom.len();
+
+        self.ram[PROGRAM_START_ADDR..program_end_addr].copy_from_slice(rom);
     }
 
     pub fn panic(&self, info: &str) -> ! {
