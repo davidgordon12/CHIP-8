@@ -410,6 +410,61 @@ impl Emulator {
                 }
             }
 
+            "Fx15" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                self.dt = self.v[x];
+            }
+
+            "Fx18" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                self.st = self.v[x];
+            }
+
+            "Fx1E" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                self.index = self.index.wrapping_add(self.v[x] as u16);
+            }
+
+            "Fx29" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                self.index = self.v[x * 5] as u16;
+            }
+
+            "Fx33" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                let vx = self.v[x] as f32;
+
+                let hundreds = (vx / 100.0).floor() as u8;
+                let tens = ((vx / 10.0) % 10.0).floor() as u8;
+                let ones = (vx % 10.0) as u8;
+
+                self.ram[self.index as usize] = hundreds;
+                self.ram[(self.index + 1) as usize] = tens;
+                self.ram[(self.index + 2) as usize] = ones;
+            }
+
+            "Fx55" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                for idx in 0..=x {
+                    self.ram[(self.index as usize) + idx] = self.v[idx];
+                }
+            }
+
+            "Fx65" => {
+                let x = ((op & 0x0F00) >> 8) as usize;
+
+                for idx in 0..=x {
+                    self.v[idx] = self.ram[(self.index as usize) + idx];
+                }
+
+            }
+
             _ => { self.panic("Unimplemented"); }
         }
     }
