@@ -105,7 +105,7 @@ impl Emulator {
         match(digit1, digit2, digit3, digit4) {
             (0, 0, 0, 0) => return "0000",
             (0, 0, 0xE, 0) => return "00E0",
-            (0, 0, 0xE, 0xE) => return "00E0",
+            (0, 0, 0xE, 0xE) => return "00EE",
             (1, _, _, _) => return "1nnn",
             (2, _, _, _) => return "2nnn",
             (3, _, _, _) => return "3nnn",
@@ -146,31 +146,36 @@ impl Emulator {
     pub fn execute(&mut self, opcode: &str, op: u16) {
         match opcode {
             // NOP
-            "0000" => return,
+            "0000" => { self.last_op = String::from("0000"); return; }
 
             // CLS
             "00E0" =>  { 
+                self.last_op = String::from("00E0");
                 self.screen = [false; SCREEN_WIDTH * SCREEN_HEIGHT];
             }
 
             // RET
             "00EE" => {
+                self.last_op = String::from("00EE");
                 self.pc = self.pop();
             }
 
             // JMP
             "1nnn" => {
+                self.last_op = String::from("1nnn");
                 self.pc = op & 0xFFF;
             }
 
             // CALL
             "2nnn" => {
+                self.last_op = String::from("2nnn");
                 self.push(self.pc);
                 self.pc = op & 0xFFF;
             }
 
             // SKIP next if VX == NN
             "3xnn" => {
+                self.last_op = String::from("3xnn");
                 let x = ((op & 0x0F00) >> 8) as usize; 
 
                 if self.v[x] == (op & 0xFF) as u8 {
@@ -179,6 +184,7 @@ impl Emulator {
             }
 
             "4xnn" => {
+                self.last_op = String::from("4xnn");
                 let x = ((op & 0x0F00) >> 8) as usize; 
 
                 if self.v[x] != (op & 0xFF) as u8 {
@@ -186,7 +192,8 @@ impl Emulator {
                 }
             }
 
-            "5xy0" => {
+            "5xy0" => { 
+                self.last_op = String::from("5xy0");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let y = ((op & 0x00F0) >> 4) as usize;
 
@@ -195,49 +202,56 @@ impl Emulator {
                 }
             }
 
-            "6xnn" => {
+            "6xnn" => { 
+                self.last_op = String::from("6xnn");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let val = (op & 0xFF) as u8;
 
                 self.v[x] = self.v[x].wrapping_add(val);
             }
 
-            "7xnn" => {
+            "7xnn" => { 
+                self.last_op = String::from("7xnn");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let val = (op & 0xFF) as u8;
 
                 self.v[x] += val;
             }
 
-            "8xy0" => {
+            "8xy0" => { 
+                self.last_op = String::from("8xy0");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let y = ((op & 0x00F0) >> 4) as usize;
 
                 self.v[x] = self.v[y];
             }
 
-            "8xy1" => {
+            "8xy1" => { 
+                self.last_op = String::from("8xy1");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let y = ((op & 0x00F0) >> 4) as usize;
 
                 self.v[x] |= self.v[y];
             }
 
-            "8xy2" => {
+            "8xy2" => { 
+                self.last_op = String::from("8xy2");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let y = ((op & 0x00F0) >> 4) as usize;
 
                 self.v[x] &= self.v[y];
             }
 
-            "8xy3" => {
+            "8xy3" => { 
+                self.last_op = String::from("8xy3");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let y = ((op & 0x00F0) >> 4) as usize;
 
                 self.v[x] ^= self.v[y];
             }
 
-            "8xy4" => {
+            "8xy4" => { 
+                self.last_op = String::from("8xy4");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let y = ((op & 0x00F0) >> 4) as usize;
                 
@@ -247,7 +261,8 @@ impl Emulator {
                 self.v[0xF] = overflow as u8;
             }
 
-            "8xy5" => {
+            "8xy5" => { 
+                self.last_op = String::from("8xy5");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let y = ((op & 0x00F0) >> 4) as usize;
                 
@@ -259,7 +274,8 @@ impl Emulator {
                 self.v[0xF] = underflow;
             }
 
-            "8xy6" => {
+            "8xy6" => { 
+                self.last_op = String::from("8xy6");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 let dropoff = self.v[x] & 1;
@@ -268,7 +284,8 @@ impl Emulator {
                 self.v[0xF] = dropoff;
             }
 
-            "8xy7" => {
+            "8xy7" => { 
+                self.last_op = String::from("8xy7");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let y = ((op & 0x00F0) >> 4) as usize;
                 
@@ -280,7 +297,8 @@ impl Emulator {
                 self.v[0xF] = underflow;
             }
 
-            "8xy8" => {
+            "8xy8" => { 
+                self.last_op = String::from("8xy8");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 let dropoff = (self.v[x] >> 7) & 1;
@@ -289,7 +307,8 @@ impl Emulator {
                 self.v[0xF] = dropoff;
             }
 
-            "9xy0" => {
+            "9xy0" => { 
+                self.last_op = String::from("9xy0");
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let y = ((op & 0x00F0) >> 4) as usize;
 
@@ -298,15 +317,18 @@ impl Emulator {
                 }
             }        
 
-            "Annn" => {
+            "Annn" => { 
+                self.last_op = String::from("Annn");
                 self.index = op & 0x0FFF;
             }
 
-            "Bnnn" => {
+            "Bnnn" => { 
+                self.last_op = String::from("Bnnn");
                 self.pc = (op & 0x0FFF) + self.v[0] as u16;
             }
 
-            "Cxnn" => {
+            "Cxnn" => { 
+                self.last_op = String::from("Cxnn");
                 let x = (op & 0x0F00) as usize;
                 let nn = (op & 0xFF) as u8;
 
@@ -316,7 +338,8 @@ impl Emulator {
                 self.v[x] = rng & nn;
             }
 
-            "Dxyn" => {
+            "Dxyn" => { 
+                self.last_op = String::from("Dxyn");
                 let x_idx = ((op & 0x0F00) >> 8) as usize;
                 let y_idx = ((op & 0x00F0) >> 4) as usize;
                 let n = op & 0xF;
@@ -359,7 +382,8 @@ impl Emulator {
                 }
             }
 
-            "Ex9E" => {
+            "Ex9E" => { 
+                self.last_op = String::from("Ex9E");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 let vx = self.v[x];
@@ -370,7 +394,8 @@ impl Emulator {
                 }
             }
 
-            "ExA1" => {
+            "ExA1" => { 
+                self.last_op = String::from("ExA1");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 let vx = self.v[x];
@@ -381,13 +406,15 @@ impl Emulator {
                 }
             }
 
-            "Fx07" => {
+            "Fx07" => { 
+                self.last_op = String::from("Fx07");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 self.v[x] = self.dt;
             }
 
-            "Fx0A" => {
+            "Fx0A" => { 
+                self.last_op = String::from("Fx0A");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 let mut pressed = false;
@@ -406,31 +433,36 @@ impl Emulator {
                 }
             }
 
-            "Fx15" => {
+            "Fx15" => { 
+                self.last_op = String::from("Fx15");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 self.dt = self.v[x];
             }
 
-            "Fx18" => {
+            "Fx18" => { 
+                self.last_op = String::from("Fx18");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 self.st = self.v[x];
             }
 
-            "Fx1E" => {
+            "Fx1E" => { 
+                String::from("Fx1E");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 self.index = self.index.wrapping_add(self.v[x] as u16);
             }
 
-            "Fx29" => {
+            "Fx29" => { 
+                String::from("Fx29");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 self.index = self.v[x * 5] as u16;
             }
 
-            "Fx33" => {
+            "Fx33" => { 
+                String::from("Fx33");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 let vx = self.v[x] as f32;
@@ -444,7 +476,8 @@ impl Emulator {
                 self.ram[(self.index + 2) as usize] = ones;
             }
 
-            "Fx55" => {
+            "Fx55" => { 
+                String::from("Fx55");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 for idx in 0..=x {
@@ -452,7 +485,8 @@ impl Emulator {
                 }
             }
 
-            "Fx65" => {
+            "Fx65" => { 
+                String::from("Fx65");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 for idx in 0..=x {
