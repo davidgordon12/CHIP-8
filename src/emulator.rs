@@ -127,7 +127,7 @@ impl Emulator {
             (0xB, _, _, _) => return "Bnnn",
             (0xC, _, _, _) => return "Cxnn",
             (0xD, _, _, _) => return "Dxyn",
-            (0xE, _, 9, 0xE) => return "Ex93",
+            (0xE, _, 9, 0xE) => return "Ex9E",
             (0xE, _, 0xA, 1) => return "ExA1",
             (0xF, _, 0, 7) => return "Fx07",
             (0xF, _, 0, 0xA) => return "Fx0A",
@@ -207,7 +207,7 @@ impl Emulator {
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let val = (op & 0xFF) as u8;
 
-                self.v[x] = self.v[x].wrapping_add(val);
+                self.v[x] = val;
             }
 
             "7xnn" => { 
@@ -215,7 +215,7 @@ impl Emulator {
                 let x = ((op & 0x0F00) >> 8) as usize;
                 let val = (op & 0xFF) as u8;
 
-                self.v[x] += val;
+                self.v[x] = self.v[x].wrapping_add(val);
             }
 
             "8xy0" => { 
@@ -297,8 +297,8 @@ impl Emulator {
                 self.v[0xF] = underflow;
             }
 
-            "8xy8" => { 
-                self.last_op = String::from("8xy8");
+            "8xyE" => { 
+                self.last_op = String::from("8xyE");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 let dropoff = (self.v[x] >> 7) & 1;
@@ -332,9 +332,9 @@ impl Emulator {
                 let x = (op & 0x0F00) as usize;
                 let nn = (op & 0xFF) as u8;
 
-                use rand::random;
+                use rand::Rng;
 
-                let rng: u8 = random();
+                let rng: u8 = rand::thread_rng().gen();
                 self.v[x] = rng & nn;
             }
 
@@ -448,21 +448,21 @@ impl Emulator {
             }
 
             "Fx1E" => { 
-                String::from("Fx1E");
+                self.last_op = String::from("Fx1E");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 self.index = self.index.wrapping_add(self.v[x] as u16);
             }
 
             "Fx29" => { 
-                String::from("Fx29");
+                self.last_op = String::from("Fx29");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 self.index = self.v[x * 5] as u16;
             }
 
             "Fx33" => { 
-                String::from("Fx33");
+                self.last_op = String::from("Fx33");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 let vx = self.v[x] as f32;
@@ -477,7 +477,7 @@ impl Emulator {
             }
 
             "Fx55" => { 
-                String::from("Fx55");
+                self.last_op = String::from("Fx55");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 for idx in 0..=x {
@@ -486,7 +486,7 @@ impl Emulator {
             }
 
             "Fx65" => { 
-                String::from("Fx65");
+                self.last_op = String::from("Fx65");
                 let x = ((op & 0x0F00) >> 8) as usize;
 
                 for idx in 0..=x {
