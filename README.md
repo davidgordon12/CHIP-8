@@ -15,7 +15,7 @@ SDL2 must first be installed. On mac, you can install it with <br />
 ``` brew install sdl2 ``` <br />
 ``` brew install sdl2_image ``` <br />
 ``` brew install sdl2_ttf ``` <br />
-Assuming that Homebrew is installed. <br />
+assuming that Homebrew is installed. <br />
 
 Clone the repo with <br />
 ``` git clone https://github.com/davidgordon12/chip-8 ``` <br />
