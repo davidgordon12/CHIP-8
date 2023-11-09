@@ -6,6 +6,7 @@ This emulator does not feature sound, but is otherwise accurate.
 # Usage
 
 ## Prerequisites
+- cargo (Rust)
 - SDL2
 - Homebrew (optional)
 
