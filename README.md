@@ -1,5 +1,5 @@
 # CHIP-8
-Chip-8 emulator implemented in Rust with SDL2
+A Chip-8 emulator implemented in Rust with SDL2
 
 This emulator does not feature sound, but is otherwise accurate.
 
